@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Know Your Team — Kraferd</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #0C0C10;
+    --surface: #14141A;
+    --card:    #1C1C24;
+    --border:  rgba(255,255,255,0.07);
+    --yellow:  #F5E642;
+    --purple:  #9B7DFF;
+    --mint:    #4ECFA8;
+    --pink:    #FF7EB3;
+    --orange:  #FF9F43;
+    --blue:    #54A0FF;
+    --text:    #F0EEF8;
+    --muted:   rgba(240,238,248,0.45);
+    --muted2:  rgba(240,238,248,0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .blob { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; }
+  .blob-1 { width: 600px; height: 600px; background: var(--purple); top: -200px; left: -200px; opacity: 0.07; }
+  .blob-2 { width: 500px; height: 500px; background: var(--mint); bottom: -150px; right: -150px; opacity: 0.07; }
+  .blob-3 { width: 300px; height: 300px; background: var(--yellow); top: 40%; left: 40%; opacity: 0.04; }
+
+  .screen { display: none; position: relative; z-index: 1; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; animation: fadeUp 0.5s ease; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  #screen-pitch { padding: 2rem 1.5rem; align-items: center; justify-content: center; }
+
+  .pitch-inner { width: 100%; max-width: 720px; }
+
+  .pitch-companies { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 3rem; }
+
+  .company-pill {
+    background: var(--card); border: 1px solid var(--border);
+    padding: 0.25rem 0.8rem; border-radius: 20px;
+    font-size: 0.72rem; font-weight: 500; color: var(--muted);
+    letter-spacing: 0.06em; font-family: 'Syne', sans-serif;
+  }
+
+  .pitch-eyebrow {
+    font-family: 'Syne', sans-serif; font-size: 0.68rem; font-weight: 700;
+    letter-spacing: 0.3em; text-transform: uppercase; color: var(--yellow);
+    margin-bottom: 1rem; opacity: 0.9;
+  }
+
+  .pitch-title {
+    font-family: 'Instrument Serif', serif; font-size: clamp(2.8rem, 8vw, 5.5rem);
+    font-style: italic; line-height: 0.95; color: var(--text); margin-bottom: 0.8rem;
+  }
+
+  .pitch-title strong {
+    font-style: normal; font-family: 'Syne', sans-serif; font-weight: 800;
+    color: var(--yellow); display: block; font-size: 55%; letter-spacing: -0.02em;
+  }
+
+  .pitch-desc { font-size: 1rem; color: var(--muted); line-height: 1.75; max-width: 520px; margin-bottom: 3rem; }
+
+  .pitch-stats { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 3rem; }
+
+  .stat-box {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.2rem 1.5rem; flex: 1; min-width: 130px;
+  }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800;
+    color: var(--yellow); display: block; line-height: 1; margin-bottom: 0.3rem;
+  }
+
+  .stat-label { font-size: 0.78rem; color: var(--muted); line-height: 1.3; }
+
+  .pitch-modes { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 3rem; }
+
+  .mode-row {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1rem 1.2rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+
+  .mode-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+  .mode-info { flex: 1; }
+  .mode-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem; }
+  .mode-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+  .mode-duration { font-family: 'Syne', sans-serif; font-size: 0.7rem; font-weight: 700; color: var(--muted2); white-space: nowrap; }
+
+  .pitch-actions { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+
+  .btn-primary {
+    background: var(--yellow); color: #0C0C10; border: none;
+    font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700;
+    padding: 1rem 2rem; border-radius: 50px; cursor: pointer;
+    transition: all 0.2s; letter-spacing: 0.04em;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(245,230,66,0.25); }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .btn-ghost {
+    background: transparent; color: var(--muted); border: 1px solid var(--border);
+    font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 600;
+    padding: 1rem 1.5rem; border-radius: 50px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.25); color: var(--text); }
+
+  #screen-game { padding: 1.2rem 1.5rem; align-items: center; }
+
+  .game-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; max-width: 780px; margin-bottom: 1.5rem; gap: 1rem;
+  }
+
+  .game-logo { font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; white-space: nowrap; }
+
+  .mode-tabs { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: 50px; padding: 3px; gap: 2px; }
+
+  .mode-tab {
+    background: transparent; border: none; color: var(--muted);
+    font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 700;
+    padding: 0.45rem 0.9rem; border-radius: 50px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .mode-tab.active { background: var(--yellow); color: #0C0C10; }
+
+  .back-btn {
+    background: none; border: none; color: var(--muted);
+    font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 600;
+    cursor: pointer; transition: color 0.2s; white-space: nowrap; padding: 0.3rem 0;
+  }
+  .back-btn:hover { color: var(--text); }
+
+  .game-mode { display: none; width: 100%; max-width: 780px; }
+  .game-mode.active { display: flex; flex-direction: column; gap: 1rem; animation: fadeUp 0.35s ease; }
+
+  .fact-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 2rem 2rem 1.5rem; position: relative; overflow: hidden; }
+  .fact-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--yellow), var(--purple), var(--mint)); }
+
+  .fact-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
+  .fact-tag { font-family: 'Syne', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--yellow); opacity: 0.8; }
+  .fact-counter { font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 700; color: var(--muted2); }
+
+  .fact-text { font-family: 'Instrument Serif', serif; font-size: clamp(1.4rem, 4vw, 2.1rem); font-style: italic; line-height: 1.35; color: var(--text); margin-bottom: 1.5rem; }
+  .fact-text .q { color: var(--yellow); opacity: 0.5; }
+
+  .vote-label { font-family: 'Syne', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.8rem; }
+
+  .names-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem; margin-bottom: 1rem; }
+
+  .name-btn {
+    background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 0.6rem 0.8rem; color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.18s;
+    text-align: left; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .name-btn .av { width: 24px; height: 24px; border-radius: 50%; font-size: 0.62rem; font-weight: 800; font-family: 'Syne', sans-serif; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .name-btn:hover:not(:disabled) { border-color: var(--yellow); background: rgba(245,230,66,0.05); transform: translateY(-1px); }
+  .name-btn.selected { border-color: var(--yellow); background: rgba(245,230,66,0.08); }
+  .name-btn.correct  { border-color: var(--mint) !important; background: rgba(78,207,168,0.1) !important; color: var(--mint); }
+  .name-btn.wrong    { border-color: rgba(255,100,100,0.4) !important; opacity: 0.4; }
+  .name-btn:disabled { cursor: default; }
+
+  .reveal-box { background: rgba(78,207,168,0.06); border: 1px solid rgba(78,207,168,0.2); border-radius: 14px; padding: 1.2rem; display: none; animation: fadeUp 0.3s ease; }
+  .reveal-box.visible { display: flex; gap: 0.8rem; align-items: flex-start; }
+
+  .reveal-av { width: 44px; height: 44px; border-radius: 50%; font-size: 0.9rem; font-weight: 800; font-family: 'Syne', sans-serif; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .reveal-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem; color: var(--mint); margin-bottom: 0.15rem; }
+  .reveal-company { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.5rem; }
+  .reveal-story { font-size: 0.82rem; color: var(--muted); font-style: italic; line-height: 1.5; border-top: 1px solid var(--border); padding-top: 0.5rem; margin-top: 0.3rem; }
+
+  .fact-actions { display: flex; gap: 0.6rem; justify-content: flex-end; }
+
+  .progress-wrap { display: flex; align-items: center; gap: 0.8rem; }
+  .progress-bar { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--yellow), var(--mint)); border-radius: 2px; transition: width 0.5s ease; }
+  .progress-label { font-family: 'Syne', sans-serif; font-size: 0.7rem; font-weight: 700; color: var(--muted2); white-space: nowrap; }
+
+  .ttl-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 1.8rem 2rem; position: relative; overflow: hidden; }
+  .ttl-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--purple), var(--pink)); }
+
+  .ttl-person { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem; }
+  .ttl-avatar { width: 48px; height: 48px; border-radius: 50%; font-size: 1rem; font-weight: 800; font-family: 'Syne', sans-serif; display: flex; align-items: center; justify-content: center; }
+  .ttl-person-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; }
+  .ttl-person-company { font-size: 0.75rem; color: var(--muted); }
+
+  .ttl-instruction { font-size: 0.82rem; color: var(--muted); font-style: italic; margin-bottom: 1.2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+
+  .ttl-statements { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.2rem; }
+
+  .ttl-stmt {
+    background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 0.9rem 1rem; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 0.8rem;
+    font-size: 0.9rem; color: var(--text); line-height: 1.4; text-align: left;
+  }
+  .ttl-stmt .stmt-num { width: 24px; height: 24px; border-radius: 50%; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 0.65rem; font-weight: 800; color: var(--muted); flex-shrink: 0; }
+  .ttl-stmt:hover:not(:disabled) { border-color: var(--purple); background: rgba(155,125,255,0.06); transform: translateX(3px); }
+  .ttl-stmt.guessed { border-color: var(--purple); background: rgba(155,125,255,0.08); }
+  .ttl-stmt.is-lie { border-color: var(--yellow) !important; background: rgba(245,230,66,0.08) !important; }
+  .ttl-stmt.is-lie .stmt-num { background: var(--yellow); color: #0C0C10; border-color: var(--yellow); }
+  .ttl-stmt.is-truth { border-color: var(--mint) !important; background: rgba(78,207,168,0.06) !important; opacity: 0.6; }
+  .ttl-stmt:disabled { cursor: default; }
+
+  .ttl-reveal { background: rgba(245,230,66,0.06); border: 1px solid rgba(245,230,66,0.2); border-radius: 12px; padding: 1rem; display: none; font-size: 0.85rem; color: var(--muted); font-style: italic; line-height: 1.5; }
+  .ttl-reveal.visible { display: block; animation: fadeUp 0.3s ease; }
+  .ttl-reveal strong { color: var(--yellow); font-style: normal; }
+
+  .spin-wrap { display: flex; flex-direction: column; align-items: center; gap: 1.2rem; }
+  .wheel-outer { position: relative; width: 280px; height: 280px; }
+  .wheel-ptr { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); z-index: 10; font-size: 1.8rem; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5)); }
+  canvas#spinCanvas { border-radius: 50%; box-shadow: 0 0 0 3px var(--card), 0 0 0 5px rgba(245,230,66,0.3), 0 12px 40px rgba(0,0,0,0.5); }
+  .wheel-hub { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 26px; height: 26px; background: var(--yellow); border-radius: 50%; border: 3px solid var(--bg); z-index: 5; }
+
+  .spin-btn { background: var(--yellow); color: #0C0C10; border: none; font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; padding: 0.9rem 2.5rem; border-radius: 50px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.05em; box-shadow: 0 4px 20px rgba(245,230,66,0.2); }
+  .spin-btn:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 8px 25px rgba(245,230,66,0.3); }
+  .spin-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .spin-result { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.3rem 1.5rem; text-align: center; width: 100%; max-width: 380px; min-height: 72px; display: flex; align-items: center; justify-content: center; }
+  .spin-result p { font-family: 'Instrument Serif', serif; font-size: 1.1rem; font-style: italic; color: var(--text); }
+  .spin-result .r-emoji { font-size: 1.8rem; display: block; margin-bottom: 0.3rem; }
+
+  #screen-results { align-items: center; justify-content: center; text-align: center; padding: 2rem 1.5rem; }
+  .results-eyebrow { font-family: 'Syne', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: var(--yellow); margin-bottom: 1rem; }
+  .results-title { font-family: 'Instrument Serif', serif; font-size: clamp(2.5rem, 7vw, 4.5rem); font-style: italic; margin-bottom: 0.5rem; line-height: 1; }
+  .results-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 2.5rem; }
+  .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.8rem; width: 100%; max-width: 780px; margin-bottom: 2.5rem; text-align: left; }
+  .result-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.1rem; display: flex; gap: 0.7rem; align-items: flex-start; }
+  .result-av { width: 36px; height: 36px; border-radius: 50%; font-size: 0.75rem; font-weight: 800; font-family: 'Syne', sans-serif; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .result-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.82rem; margin-bottom: 0.2rem; }
+  .result-fact { font-size: 0.72rem; color: var(--muted); font-style: italic; line-height: 1.35; }
+  .results-btns { display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center; }
+
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 1.8rem; width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto; animation: fadeUp 0.3s ease; }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; margin-bottom: 0.3rem; }
+  .modal-sub { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.5rem; line-height: 1.5; }
+
+  .person-block { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; margin-bottom: 0.7rem; }
+  .person-block-header { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.7rem; }
+
+  .mi { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.83rem; outline: none; transition: border-color 0.2s; width: 100%; }
+  .mi:focus { border-color: var(--yellow); }
+  .mi.sm { width: 110px; }
+
+  .stmts-wrap { display: flex; flex-direction: column; gap: 0.4rem; }
+  .stmt-row { display: flex; gap: 0.4rem; align-items: center; }
+  .stmt-row .mi { flex: 1; }
+
+  .lie-label { font-size: 0.6rem; font-family: 'Syne', sans-serif; font-weight: 700; color: var(--mint); white-space: nowrap; background: rgba(78,207,168,0.1); border: 1px solid rgba(78,207,168,0.25); padding: 0.2rem 0.4rem; border-radius: 4px; }
+
+  .rm-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; padding: 0.2rem; transition: color 0.15s; flex-shrink: 0; }
+  .rm-btn:hover { color: #FF6B6B; }
+
+  .add-stmt-btn { background: none; border: 1px dashed var(--border); border-radius: 8px; color: var(--muted); font-size: 0.75rem; padding: 0.35rem; cursor: pointer; width: 100%; transition: all 0.15s; margin-top: 0.3rem; }
+  .add-stmt-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+
+  .add-person-btn { background: none; border: 1px dashed var(--border); border-radius: 14px; color: var(--muted); font-size: 0.82rem; padding: 0.75rem; cursor: pointer; width: 100%; transition: all 0.15s; margin-bottom: 1.2rem; font-family: 'Syne', sans-serif; font-weight: 600; }
+  .add-person-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+
+  .modal-footer { display: flex; gap: 0.7rem; justify-content: flex-end; padding-top: 0.8rem; border-top: 1px solid var(--border); }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--mint);
+    color: #0C0C10;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.7rem 1.4rem;
+    border-radius: 50px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 200;
+    white-space: nowrap;
+    box-shadow: 0 8px 30px rgba(78,207,168,0.35);
+    letter-spacing: 0.03em;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 560px) {
+    .pitch-stats { gap: 0.6rem; }
+    .stat-box { min-width: 100px; padding: 1rem; }
+    .mode-tabs { gap: 1px; }
+    .mode-tab { padding: 0.4rem 0.6rem; font-size: 0.65rem; }
+    .wheel-outer { width: 240px; height: 240px; }
+    canvas#spinCanvas { width: 240px !important; height: 240px !important; }
+    .names-grid { grid-template-columns: 1fr 1fr; }
+    .fact-text { font-size: 1.3rem; }
+    .fact-card { padding: 1.3rem 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<!-- PITCH -->
+<div class="screen active" id="screen-pitch">
+  <div class="pitch-inner">
+    <div class="pitch-companies">
+      <span class="company-pill">Kraferd</span>
+      <span class="company-pill">Trumpet</span>
+      <span class="company-pill">emmyHealth</span>
+      <span class="company-pill">JobSource Colombia</span>
+    </div>
+    <p class="pitch-eyebrow">Team Activity Proposal ✦</p>
+    <h1 class="pitch-title">Know your<br>team.<strong>REALLY.</strong></h1>
+    <p class="pitch-desc">A 15-minute interactive game for our next team call. Three rounds, zero awkward silences, and you'll actually learn something surprising about the people you work with every day.</p>
+    <div class="pitch-stats">
+      <div class="stat-box"><span class="stat-num">15</span><span class="stat-label">minutes total</span></div>
+      <div class="stat-box"><span class="stat-num">3</span><span class="stat-label">game modes</span></div>
+      <div class="stat-box"><span class="stat-num">10–15</span><span class="stat-label">players</span></div>
+      <div class="stat-box"><span class="stat-num">0</span><span class="stat-label">cringe moments</span></div>
+    </div>
+    <div class="pitch-modes">
+      <div class="mode-row">
+        <div class="mode-icon" style="background:rgba(245,230,66,0.1)">🔍</div>
+        <div class="mode-info"><div class="mode-name">Match the Fact</div><div class="mode-desc">A mystery fact appears. Everyone votes who said it. Then that person shares the story.</div></div>
+        <span class="mode-duration">~6 min</span>
+      </div>
+      <div class="mode-row">
+        <div class="mode-icon" style="background:rgba(155,125,255,0.1)">🎭</div>
+        <div class="mode-info"><div class="mode-name">Two Lies, One Truth</div><div class="mode-desc">Three statements per person. Two are lies, one is real. The team has to spot the truth.</div></div>
+        <span class="mode-duration">~6 min</span>
+      </div>
+      <div class="mode-row">
+        <div class="mode-icon" style="background:rgba(78,207,168,0.1)">🎡</div>
+        <div class="mode-info"><div class="mode-name">Spin & Answer</div><div class="mode-desc">Spin the wheel, get a question, whoever the host picks has to answer it live.</div></div>
+        <span class="mode-duration">~5 min</span>
+      </div>
+    </div>
+    <div class="pitch-actions">
+      <button class="btn-primary" onclick="launchGame()">Try the demo →</button>
+      <button class="btn-ghost" onclick="openAdmin()">✏️ Edit team data</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="screen-game">
+  <div class="game-topbar">
+    <button class="back-btn" onclick="showScreen('screen-pitch')">← Back</button>
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="switchMode('match', this)">🔍 Match</button>
+      <button class="mode-tab" onclick="switchMode('ttl', this)">🎭 Truth</button>
+      <button class="mode-tab" onclick="switchMode('spin', this)">🎡 Spin</button>
+    </div>
+    <span class="game-logo">Kraferd ✦</span>
+  </div>
+
+  <!-- Match the Fact -->
+  <div class="game-mode active" id="mode-match">
+    <div class="progress-wrap">
+      <span class="progress-label" id="matchProgress">1 / 8</span>
+      <div class="progress-bar"><div class="progress-fill" id="matchFill" style="width:12%"></div></div>
+    </div>
+    <div class="fact-card">
+      <div class="fact-meta">
+        <span class="fact-tag">Mystery Fact</span>
+        <span class="fact-counter" id="factNum">Fact #1</span>
+      </div>
+      <p class="fact-text"><span class="q">"</span><span id="factContent">Loading...</span><span class="q">"</span></p>
+      <p class="vote-label">Who do you think said this?</p>
+      <div class="names-grid" id="namesGrid"></div>
+    </div>
+    <div class="reveal-box" id="revealBox">
+      <div class="reveal-av" id="revealAv"></div>
+      <div>
+        <div class="reveal-name" id="revealName"></div>
+        <div class="reveal-company" id="revealCompany"></div>
+        <div class="reveal-story" id="revealStory"></div>
+      </div>
+    </div>
+    <div class="fact-actions">
+      <button class="btn-ghost" onclick="resetMatch()">↺ Restart</button>
+      <button class="btn-primary" id="matchActionBtn" onclick="handleMatchAction()">Reveal →</button>
+    </div>
+  </div>
+
+  <!-- Two Truths One Lie -->
+  <div class="game-mode" id="mode-ttl">
+    <div class="ttl-card">
+      <div class="ttl-person">
+        <div class="ttl-avatar" id="ttlAvatar"></div>
+        <div>
+          <div class="ttl-person-name" id="ttlName">Name</div>
+          <div class="ttl-person-company" id="ttlCompany">Company</div>
+        </div>
+      </div>
+      <p class="ttl-instruction">Two of these are <strong style="color:var(--yellow)">lies</strong>. One is the <strong style="color:var(--mint)">truth</strong>. Tap the one you think is real — then the host reveals!</p>
+      <div class="ttl-statements" id="ttlStatements"></div>
+      <div class="ttl-reveal" id="ttlReveal"></div>
+    </div>
+    <div class="fact-actions">
+      <button class="btn-ghost" onclick="loadTTL()">↺ Next person</button>
+      <button class="btn-primary" id="ttlRevealBtn" onclick="revealTTL()">Reveal truth →</button>
+    </div>
+  </div>
+
+  <!-- Spin & Answer -->
+  <div class="game-mode" id="mode-spin">
+    <div class="spin-wrap">
+      <div class="wheel-outer">
+        <div class="wheel-ptr">▼</div>
+        <canvas id="spinCanvas" width="280" height="280"></canvas>
+        <div class="wheel-hub"></div>
+      </div>
+      <button class="spin-btn" id="spinBtn" onclick="doSpin()">Spin it! ✦</button>
+      <div class="spin-result" id="spinResult">
+        <p style="opacity:0.35; font-size:0.9rem">spin the wheel to get a question...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="screen-results">
+  <p class="results-eyebrow">That's a wrap ✦</p>
+  <h2 class="results-title">Now you<br>know them.</h2>
+  <p class="results-sub">Here's your team at a glance</p>
+  <div class="results-grid" id="resultsGrid"></div>
+  <div class="results-btns">
+    <button class="btn-ghost" onclick="showScreen('screen-pitch')">← Back to start</button>
+    <button class="btn-primary" onclick="launchGame()">Play again →</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">✓ Team data saved successfully</div>
+
+<!-- ADMIN -->
+<div class="overlay" id="adminOverlay">
+  <div class="modal">
+    <div class="modal-title">Edit team data</div>
+  <p class="modal-sub">Add each person's name, company, a fun fact (for Match the Fact), and three statements — two should be lies, one should be the truth. Mark which statement index (0, 1 or 2) is the <strong style="color:var(--mint)">truth</strong>.</p>
+    <div id="adminList"></div>
+    <button class="add-person-btn" onclick="addPerson()">+ Add person</button>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeAdmin()">Close</button>
+      <button class="btn-primary" onclick="saveAdmin()">Save & play →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'kraferd_team_data';
+
+const COLORS = [
+  { bg:'#F5E642', fg:'#0C0C10' },
+  { bg:'#9B7DFF', fg:'#fff' },
+  { bg:'#4ECFA8', fg:'#0C0C10' },
+  { bg:'#FF7EB3', fg:'#0C0C10' },
+  { bg:'#FF9F43', fg:'#0C0C10' },
+  { bg:'#54A0FF', fg:'#0C0C10' },
+  { bg:'#FF6B6B', fg:'#fff' },
+  { bg:'#A29BFE', fg:'#0C0C10' },
+];
+
+const col = i => COLORS[i % COLORS.length];
+const ini = n => n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+
+const DEFAULT_TEAM = [
+  { name:"Alex Rivera",    company:"Trumpet",           fact:"I've lived in 4 different countries",        stmts:["I used to be a competitive swimmer","I speak three languages","I've never eaten sushi"],              lieIdx:2 },
+  { name:"Sam Chen",       company:"emmyHealth",         fact:"I learned to cook during lockdown",          stmts:["I once hiked 40km in a day by accident","I have a pet snake","I played chess competitively"],        lieIdx:1 },
+  { name:"Jordan Lee",     company:"Kraferd",            fact:"I dream in only one language",               stmts:["I've never watched Game of Thrones","I ran a marathon last year","I collect vintage postcards"],       lieIdx:1 },
+  { name:"Morgan Díaz",    company:"JobSource Colombia", fact:"I have over 200 houseplants",                stmts:["I was almost a professional swimmer","I've read the same book 7 times","I make my own hot sauce"],    lieIdx:2 },
+  { name:"Taylor Kim",     company:"Trumpet",            fact:"I bake sourdough every Sunday",              stmts:["I once met a famous person and had no idea who they were","I've been skydiving twice","I speak fluent Japanese"], lieIdx:1 },
+  { name:"Casey Patel",    company:"emmyHealth",         fact:"I can solve a Rubik's cube under 2 minutes", stmts:["I've read the same book 7 times","I grew up on a farm","I've never owned a smartphone"],             lieIdx:2 },
+  { name:"Riley Martínez", company:"Kraferd",            fact:"I started learning guitar last year",        stmts:["I once got lost in an airport for 6 hours","I used to be a competitive archer","I lived abroad for 3 years"], lieIdx:1 },
+  { name:"Drew Park",      company:"JobSource Colombia", fact:"I've never drunk coffee — ever",             stmts:["I've seen every Studio Ghibli film 3+ times","I ran a half marathon last month","I built my own furniture"], lieIdx:1 },
+];
+
+// ===== LOAD FROM LOCALSTORAGE OR USE DEFAULT =====
+function loadTeam() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_TEAM));
+}
+
+function persistTeam() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(team));
+  } catch(e) {}
+}
+
+let team = loadTeam();
+
+// ===== SPIN =====
+const spinQs = [
+  { q: "What's one skill you have that would surprise your team?", emoji:"🤹" },
+  { q: "What's the last thing you Googled at work?", emoji:"🔍" },
+  { q: "Coffee or no coffee — and how many per day?", emoji:"☕" },
+  { q: "What's a show or film you've rewatched more than 3 times?", emoji:"🎬" },
+  { q: "What did you want to be when you were 10 years old?", emoji:"🚀" },
+  { q: "What's the most random thing on your desk right now?", emoji:"🗂️" },
+  { q: "What's one thing you're learning outside of work?", emoji:"📚" },
+  { q: "Early bird or night owl — and what time do you actually wake up?", emoji:"🦉" },
+];
+
+const WHEEL_STROKES = ['#F5E642','#9B7DFF','#4ECFA8','#FF7EB3','#FF9F43','#54A0FF','#FF6B6B','#A29BFE'];
+
+// ===== MATCH THE FACT =====
+let factQueue = [], factIdx = 0, matchRevealed = false, matchSelected = null;
+
+function buildFactQueue() {
+  factQueue = team.map((p, i) => ({ fact: p.fact, pIdx: i }));
+  for (let i = factQueue.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [factQueue[i], factQueue[j]] = [factQueue[j], factQueue[i]];
+  }
+}
+
+function loadMatch() {
+  matchRevealed = false; matchSelected = null;
+  document.getElementById('revealBox').classList.remove('visible');
+  document.getElementById('matchActionBtn').textContent = 'Reveal →';
+  const total = factQueue.length, cur = factIdx + 1;
+  document.getElementById('matchProgress').textContent = `${cur} / ${total}`;
+  document.getElementById('matchFill').style.width = `${(cur/total)*100}%`;
+  document.getElementById('factNum').textContent = `Fact #${cur}`;
+  const item = factQueue[factIdx];
+  const el = document.getElementById('factContent');
+  el.textContent = item.fact;
+  el.parentElement.parentElement.style.animation = 'none';
+  el.parentElement.parentElement.offsetHeight;
+  el.parentElement.parentElement.style.animation = 'fadeUp 0.4s ease';
+  const grid = document.getElementById('namesGrid');
+  grid.innerHTML = '';
+  team.forEach((p, i) => {
+    const c = col(i);
+    const btn = document.createElement('button');
+    btn.className = 'name-btn'; btn.dataset.idx = i;
+    btn.innerHTML = `<div class="av" style="background:${c.bg};color:${c.fg}">${ini(p.name)}</div>${p.name}`;
+    btn.onclick = () => {
+      if (matchRevealed) return;
+      matchSelected = i;
+      document.querySelectorAll('.name-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    };
+    grid.appendChild(btn);
+  });
+}
+
+function handleMatchAction() {
+  if (!matchRevealed) {
+    matchRevealed = true;
+    const item = factQueue[factIdx], correct = item.pIdx, p = team[correct], c = col(correct);
+    document.querySelectorAll('.name-btn').forEach(b => {
+      const i = parseInt(b.dataset.idx); b.classList.remove('selected'); b.disabled = true;
+      if (i === correct) b.classList.add('correct');
+      else if (i === matchSelected) b.classList.add('wrong');
+    });
+    const box = document.getElementById('revealBox'), av = document.getElementById('revealAv');
+    av.textContent = ini(p.name); av.style.background = c.bg; av.style.color = c.fg;
+    document.getElementById('revealName').textContent = p.name;
+    document.getElementById('revealCompany').textContent = p.company;
+    document.getElementById('revealStory').textContent = `"${item.fact}" — Ask ${p.name.split(' ')[0]} to tell the story!`;
+    box.classList.add('visible');
+    const isLast = factIdx >= factQueue.length - 1;
+    document.getElementById('matchActionBtn').textContent = isLast ? 'See recap →' : 'Next →';
+  } else {
+    factIdx++;
+    if (factIdx >= factQueue.length) showResults();
+    else loadMatch();
+  }
+}
+
+function resetMatch() { factIdx = 0; buildFactQueue(); loadMatch(); }
+
+// ===== TWO TRUTHS ONE LIE =====
+let ttlQueue = [], ttlIdx = 0, ttlRevealed = false;
+
+function buildTTLQueue() {
+  ttlQueue = [...Array(team.length).keys()];
+  for (let i = ttlQueue.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [ttlQueue[i], ttlQueue[j]] = [ttlQueue[j], ttlQueue[i]];
+  }
+}
+
+function loadTTL() {
+  ttlRevealed = false;
+  document.getElementById('ttlReveal').classList.remove('visible');
+  document.getElementById('ttlRevealBtn').textContent = 'Reveal lie →';
+  if (ttlIdx >= ttlQueue.length) ttlIdx = 0;
+  const pIdx = ttlQueue[ttlIdx], p = team[pIdx], c = col(pIdx);
+  const av = document.getElementById('ttlAvatar');
+  av.textContent = ini(p.name); av.style.background = c.bg; av.style.color = c.fg;
+  document.getElementById('ttlName').textContent = p.name;
+  document.getElementById('ttlCompany').textContent = p.company;
+  const stmts = document.getElementById('ttlStatements');
+  stmts.innerHTML = '';
+  const order = [0,1,2];
+  for (let i = order.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  order.forEach((sIdx, displayIdx) => {
+    const btn = document.createElement('button');
+    btn.className = 'ttl-stmt'; btn.dataset.sidx = sIdx;
+    btn.innerHTML = `<div class="stmt-num">${displayIdx+1}</div>${p.stmts[sIdx]}`;
+    btn.onclick = () => {
+      if (ttlRevealed) return;
+      document.querySelectorAll('.ttl-stmt').forEach(b => b.classList.remove('guessed'));
+      btn.classList.add('guessed');
+    };
+    stmts.appendChild(btn);
+  });
+  ttlIdx++;
+}
+
+function revealTTL() {
+  if (ttlRevealed) { loadTTL(); return; }
+  ttlRevealed = true;
+  const pIdx = ttlQueue[(ttlIdx - 1 + ttlQueue.length) % ttlQueue.length], p = team[pIdx];
+  document.querySelectorAll('.ttl-stmt').forEach(btn => {
+    btn.disabled = true; btn.classList.remove('guessed');
+    const sIdx = parseInt(btn.dataset.sidx);
+    if (sIdx === p.lieIdx) btn.classList.add('is-lie');
+    else btn.classList.add('is-truth');
+  });
+  const rev = document.getElementById('ttlReveal');
+  rev.innerHTML = `<strong>The truth was statement #${p.lieIdx + 1}!</strong> "${p.stmts[p.lieIdx]}" — Ask ${p.name.split(' ')[0]} to tell the story behind it.`;
+  rev.classList.add('visible');
+  document.getElementById('ttlRevealBtn').textContent = 'Next person →';
+}
+
+// ===== SPIN =====
+let spinning = false, spinAngle = 0;
+
+function initSpin() {
+  const size = window.innerWidth <= 560 ? 240 : 280;
+  const canvas = document.getElementById('spinCanvas');
+  canvas.width = size; canvas.height = size;
+  canvas.parentElement.style.width = size+'px';
+  canvas.parentElement.style.height = size+'px';
+  drawSpin(spinAngle);
+}
+
+function drawSpin(angle) {
+  const canvas = document.getElementById('spinCanvas');
+  const ctx = canvas.getContext('2d');
+  const sz = canvas.width, cx = sz/2, cy = sz/2, r = sz/2 - 2;
+  const n = spinQs.length, sa = (2*Math.PI)/n;
+  ctx.clearRect(0,0,sz,sz);
+  for (let i = 0; i < n; i++) {
+    const s = angle + i*sa, e = s + sa;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,s,e); ctx.closePath();
+    ctx.fillStyle = i%2===0 ? '#1C1C24' : '#14141A'; ctx.fill();
+    ctx.strokeStyle = WHEEL_STROKES[i]; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(s + sa/2);
+    ctx.font = `${Math.floor(sz*0.07)}px serif`; ctx.textAlign = 'right';
+    ctx.fillText(spinQs[i].emoji, r-10, 6); ctx.restore();
+  }
+}
+
+function doSpin() {
+  if (spinning) return;
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('spinResult').innerHTML = '<p style="opacity:0.3">spinning...</p>';
+  const extra = (5+Math.floor(Math.random()*5))*2*Math.PI;
+  const target = spinAngle + extra + Math.random()*2*Math.PI;
+  const dur = 3500, t0 = performance.now(), a0 = spinAngle;
+  const tick = now => {
+    const p = Math.min((now-t0)/dur, 1), e = 1 - Math.pow(1-p, 4);
+    spinAngle = a0 + (target-a0)*e; drawSpin(spinAngle);
+    if (p < 1) { requestAnimationFrame(tick); return; }
+    spinAngle = target; spinning = false;
+    document.getElementById('spinBtn').disabled = false;
+    showSpinResult();
+  };
+  requestAnimationFrame(tick);
+}
+
+function showSpinResult() {
+  const n = spinQs.length, sa = (2*Math.PI)/n;
+  const norm = ((-spinAngle - Math.PI/2) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+  const idx = Math.floor(norm/sa) % n, q = spinQs[idx];
+  document.getElementById('spinResult').innerHTML = `<div><span class="r-emoji">${q.emoji}</span><p>${q.q}</p></div>`;
+}
+
+// ===== RESULTS =====
+function showResults() {
+  showScreen('screen-results');
+  const g = document.getElementById('resultsGrid');
+  g.innerHTML = '';
+  team.forEach((p,i) => {
+    const c = col(i), d = document.createElement('div');
+    d.className = 'result-card';
+    d.innerHTML = `<div class="result-av" style="background:${c.bg};color:${c.fg}">${ini(p.name)}</div><div><div class="result-name">${p.name}</div><div class="result-fact">${p.fact}</div></div>`;
+    g.appendChild(d);
+  });
+}
+
+// ===== ADMIN =====
+function openAdmin() { renderAdmin(); document.getElementById('adminOverlay').classList.add('open'); }
+function closeAdmin() { document.getElementById('adminOverlay').classList.remove('open'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function renderAdmin() {
+  const list = document.getElementById('adminList');
+  list.innerHTML = '';
+  team.forEach((p, pIdx) => {
+    const c = col(pIdx), div = document.createElement('div');
+    div.className = 'person-block';
+    const stmtsHtml = p.stmts.map((s,sIdx) => `
+      <div class="stmt-row">
+        <input class="mi" type="text" value="${s.replace(/"/g,'&quot;')}" data-pidx="${pIdx}" data-sidx="${sIdx}" placeholder="Statement ${sIdx+1}">
+        ${sIdx === p.lieIdx ? '<span class="lie-label">✓ TRUTH</span>' : ''}
+        <button class="rm-btn" onclick="removeStmt(${pIdx},${sIdx})">✕</button>
+      </div>`).join('');
+    div.innerHTML = `
+      <div class="person-block-header">
+        <div style="width:26px;height:26px;border-radius:50%;background:${c.bg};color:${c.fg};display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:800;font-family:'Syne',sans-serif;flex-shrink:0">${ini(p.name)}</div>
+        <input class="mi" type="text" value="${p.name.replace(/"/g,'&quot;')}" data-pidx="${pIdx}" data-field="name" placeholder="Full name">
+        <input class="mi sm" type="text" value="${p.company.replace(/"/g,'&quot;')}" data-pidx="${pIdx}" data-field="company" placeholder="Company">
+        <button class="rm-btn" onclick="removePerson(${pIdx})">✕</button>
+      </div>
+      <input class="mi" type="text" value="${p.fact.replace(/"/g,'&quot;')}" data-pidx="${pIdx}" data-field="fact" placeholder="Fun fact (for Match the Fact)" style="margin-bottom:0.5rem">
+      <div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.4rem;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:0.1em">STATEMENTS — which index is the <span style="color:var(--mint)">truth</span>? (0, 1 or 2): <input type="number" min="0" max="2" value="${p.lieIdx}" data-pidx="${pIdx}" data-field="lieIdx" style="width:40px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--mint);font-size:0.75rem;padding:0.1rem 0.3rem;outline:none;text-align:center"></div>
+      <div class="stmts-wrap" id="stmts-${pIdx}">${stmtsHtml}</div>
+      <button class="add-stmt-btn" onclick="addStmt(${pIdx})">+ add statement</button>`;
+    list.appendChild(div);
+  });
+}
+
+// Read current input values into team BEFORE any re-render
+function syncInputsToTeam() {
+  document.querySelectorAll('[data-field="name"]').forEach(el => { team[+el.dataset.pidx].name = el.value; });
+  document.querySelectorAll('[data-field="company"]').forEach(el => { team[+el.dataset.pidx].company = el.value; });
+  document.querySelectorAll('[data-field="fact"]').forEach(el => { team[+el.dataset.pidx].fact = el.value; });
+  document.querySelectorAll('[data-field="lieIdx"]').forEach(el => { team[+el.dataset.pidx].lieIdx = Math.max(0, Math.min(parseInt(el.value)||0, team[+el.dataset.pidx].stmts.length-1)); });
+  document.querySelectorAll('[data-sidx]').forEach(el => { team[+el.dataset.pidx].stmts[+el.dataset.sidx] = el.value; });
+}
+
+function addPerson() { syncInputsToTeam(); team.push({ name:'', company:'', fact:'', stmts:['','',''], lieIdx:0 }); renderAdmin(); }
+
+function removePerson(i) { if (team.length <= 2) return; syncInputsToTeam(); team.splice(i,1); renderAdmin(); }
+
+function addStmt(pIdx) { syncInputsToTeam(); team[pIdx].stmts.push(''); renderAdmin(); }
+
+function removeStmt(pIdx, sIdx) {
+  if (team[pIdx].stmts.length <= 2) return;
+  syncInputsToTeam();
+  team[pIdx].stmts.splice(sIdx,1);
+  if (team[pIdx].lieIdx >= team[pIdx].stmts.length) team[pIdx].lieIdx = team[pIdx].stmts.length-1;
+  renderAdmin();
+}
+
+function saveAdmin() {
+  // Read all fields back into team array
+  document.querySelectorAll('[data-field="name"]').forEach(el => { team[+el.dataset.pidx].name = el.value.trim() || team[+el.dataset.pidx].name; });
+  document.querySelectorAll('[data-field="company"]').forEach(el => { team[+el.dataset.pidx].company = el.value.trim() || team[+el.dataset.pidx].company; });
+  document.querySelectorAll('[data-field="fact"]').forEach(el => { team[+el.dataset.pidx].fact = el.value.trim() || team[+el.dataset.pidx].fact; });
+  document.querySelectorAll('[data-field="lieIdx"]').forEach(el => { team[+el.dataset.pidx].lieIdx = Math.max(0, Math.min(parseInt(el.value)||0, team[+el.dataset.pidx].stmts.length-1)); });
+  document.querySelectorAll('[data-sidx]').forEach(el => { team[+el.dataset.pidx].stmts[+el.dataset.sidx] = el.value.trim(); });
+  team.forEach(p => { p.stmts = p.stmts.filter(s=>s.length>0); if (!p.stmts.length) p.stmts=['...','...','...']; });
+  team = team.filter(p => p.name.length > 0);
+
+  // ✅ SAVE TO LOCALSTORAGE
+  persistTeam();
+  showToast('✓ Team data saved successfully');
+
+  closeAdmin();
+  launchGame();
+}
+
+// ===== NAV =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function switchMode(id, btn) {
+  document.querySelectorAll('.game-mode').forEach(m => m.classList.remove('active'));
+  document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('mode-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function launchGame() {
+  buildFactQueue(); buildTTLQueue();
+  factIdx = 0; ttlIdx = 0;
+  loadMatch(); loadTTL();
+  showScreen('screen-game');
+  switchMode('match', document.querySelector('.mode-tab'));
+}
+
+initSpin();
+window.addEventListener('resize', initSpin);
+</script>
+</body>
+</html>
